@@ -1,5 +1,5 @@
-const CACHE_NAME = 'memory-reminder-v1';
-const ASSETS = ['/', '/add.html', '/settings.html', '/styles.css', '/app.js'];
+const CACHE_NAME = 'memory-reminder-v2';
+const ASSETS = ['/', '/add.html', '/settings.html', '/login.html', '/styles.css', '/app.js'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
