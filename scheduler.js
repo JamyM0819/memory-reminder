@@ -52,7 +52,7 @@ function start(db) {
         try {
           for (const sub of subscriptions) {
             const pushSub = { endpoint: sub.endpoint, keys: sub.keys };
-            await push.sendNotification(pushSub, reminder.memo_content);
+            await push.sendNotification(pushSub, reminder.memo_title || '', reminder.memo_content);
           }
           db.markNotified(reminder.id);
           console.log(`[${new Date().toLocaleString()}] Sent reminder #${reminder.id}: ${reminder.memo_content.substring(0, 40)}...`);

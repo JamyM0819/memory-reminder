@@ -30,11 +30,11 @@ const API = {
     const res = await authFetch('/api/memos');
     return res.json();
   },
-  async createMemo(content) {
+  async createMemo(content, title) {
     const res = await authFetch('/api/memos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content })
+      body: JSON.stringify({ content, title })
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
@@ -44,6 +44,14 @@ const API = {
   },
   async toggleMemo(id) {
     const res = await authFetch(`/api/memos/${id}/toggle`, { method: 'PUT' });
+    return res.json();
+  },
+  async updateMemo(id, content, title) {
+    const res = await authFetch(`/api/memos/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, title })
+    });
     return res.json();
   },
   async getSettings() {
@@ -79,9 +87,13 @@ function renderMemoCard(memo) {
     ? `下次: ${memo.next_remind_at.substring(5, 16)}`
     : memo.notified_count >= INTERVAL_COUNT ? '✅ 已完成全部提醒' : '⏸ 已暂停';
 
+  // Strip HTML tags for preview
+  const contentPreview = memo.content.replace(/<[^>]*>/g, '').substring(0, 80);
+
   return `
     <div class="memo-card ${memo.is_active ? '' : 'memo-inactive'}" data-id="${memo.id}">
-      <div class="memo-content" onclick="location.href='/add.html?id=${memo.id}'">${memo.content}</div>
+      <div class="memo-title" onclick="location.href='/add.html?id=${memo.id}'">${escapeHtml(memo.title || '无标题')}</div>
+      <div class="memo-content" onclick="location.href='/add.html?id=${memo.id}'">${escapeHtml(contentPreview)}${memo.content.length > 80 ? '…' : ''}</div>
       <div class="memo-meta">
         <span class="progress-dots">${dots}</span>
         <span>${memo.notified_count}/${INTERVAL_COUNT} · ${nextTime}</span>

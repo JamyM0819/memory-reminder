@@ -31,11 +31,11 @@ app.get('/api/memos', (req, res) => {
 
 app.post('/api/memos', (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, title } = req.body;
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return res.status(400).json({ error: 'Content is required' });
     }
-    const memo = db.createMemo(content.trim());
+    const memo = db.createMemo(content.trim(), (title || '').trim());
     res.status(201).json(memo);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -44,11 +44,11 @@ app.post('/api/memos', (req, res) => {
 
 app.put('/api/memos/:id', (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, title } = req.body;
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return res.status(400).json({ error: 'Content is required' });
     }
-    const memo = db.updateMemo(req.params.id, content.trim());
+    const memo = db.updateMemo(req.params.id, content.trim(), (title || '').trim());
     if (!memo) return res.status(404).json({ error: 'Memo not found' });
     res.json(memo);
   } catch (err) {

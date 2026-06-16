@@ -7,6 +7,19 @@
   <link rel="stylesheet" href="/styles.css">
   <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
   <style>
+    .title-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      outline: none;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .title-input:focus { border-color: #4a90d9; }
     .ql-container { font-size: 16px; min-height: 200px; }
     .ql-editor { min-height: 200px; }
     .ql-toolbar { border-radius: 8px 8px 0 0; }
@@ -20,6 +33,7 @@
   </div>
 
   <div class="form-page">
+    <input type="text" class="title-input" id="title-input" placeholder="标题（必填）" autofocus>
     <div id="editor"></div>
     <div class="form-actions" style="margin-top:12px;">
       <button class="btn btn-secondary" onclick="history.back()">取消</button>
@@ -34,7 +48,7 @@
   <script>
     const quill = new Quill('#editor', {
       theme: 'snow',
-      placeholder: '写下一段需要记忆的内容…',
+      placeholder: '写下一段需要记忆的内容（可选）…',
       modules: {
         toolbar: [
           ['bold', 'italic', 'underline', 'strike'],
@@ -56,6 +70,7 @@
           const memos = await API.getMemos();
           const memo = memos.find(m => m.id == editId);
           if (memo) {
+            document.getElementById('title-input').value = memo.title || '';
             quill.root.innerHTML = memo.content;
           }
         } catch (err) {
@@ -65,23 +80,30 @@
     }
 
     async function handleSave() {
-      const content = quill.root.innerHTML;
-      const text = quill.getText().trim();
-      if (!text) {
-        showToast('请输入记忆内容');
+      const title = document.getElementById('title-input').value.trim();
+      if (!title) {
+        showToast('请输入标题');
+        document.getElementById('title-input').focus();
         return;
       }
+      const content = quill.root.innerHTML;
       try {
         if (editId) {
-          await API.updateMemo(editId, content);
+          await API.updateMemo(editId, content, title);
         } else {
-          await API.createMemo(content);
+          await API.createMemo(content, title);
         }
         location.href = '/';
       } catch (err) {
         showToast('保存失败，请重试');
       }
     }
+
+    document.getElementById('title-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        // Let Enter move to editor by default (don't submit)
+      }
+    });
 
     init();
   </script>

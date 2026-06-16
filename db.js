@@ -42,6 +42,7 @@ function initSchema(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS memos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL DEFAULT '',
       content TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       is_active INTEGER NOT NULL DEFAULT 1
@@ -69,7 +70,11 @@ function initSchema(db) {
     );
   `);
 
-  // Insert default settings if not exists
+  // Migration: add title column for existing databases
+  const colInfo = db.prepare("PRAGMA table_info('memos')").all();
+  if (!colInfo.find(c => c.name === 'title')) {
+    db.exec("ALTER TABLE memos ADD COLUMN title TEXT NOT NULL DEFAULT ''");
+  }
   const insertSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
   insertSetting.run('dnd_weekday_start', '"23:00"');
   insertSetting.run('dnd_weekday_end', '"07:00"');
@@ -94,14 +99,14 @@ function getAllMemos() {
   return memos;
 }
 
-function createMemo(content) {
+function createMemo(content, title) {
   const db = getDb();
   initSchema(db);
   const now = new Date();
 
   const localTime = toLocalISO(now);
-  const insertMemo = db.prepare('INSERT INTO memos (content, created_at) VALUES (?, ?)');
-  const result = insertMemo.run(content, localTime);
+  const insertMemo = db.prepare('INSERT INTO memos (title, content, created_at) VALUES (?, ?, ?)');
+  const result = insertMemo.run(title || '', content, localTime);
   const memoId = result.lastInsertRowid;
 
   const insertReminder = db.prepare(
@@ -118,13 +123,13 @@ function createMemo(content) {
   insertMany(INTERVALS);
   db.close();
 
-  return { id: Number(memoId), content, created_at: localTime, is_active: 1 };
+  return { id: Number(memoId), title: title || '', content, created_at: localTime, is_active: 1 };
 }
 
-function updateMemo(id, content) {
+function updateMemo(id, content, title) {
   const db = getDb();
   initSchema(db);
-  const result = db.prepare('UPDATE memos SET content = ? WHERE id = ?').run(content, id);
+  const result = db.prepare('UPDATE memos SET content = ?, title = ? WHERE id = ?').run(content, title || '', id);
   db.close();
   if (result.changes === 0) return null;
   return { id: Number(id), content };
@@ -179,7 +184,7 @@ function getDueReminders() {
   initSchema(db);
   const nowStr = toLocalISO(new Date());
   const reminders = db.prepare(`
-    SELECT r.*, m.content as memo_content
+    SELECT r.*, m.content as memo_content, m.title as memo_title
     FROM reminders r
     JOIN memos m ON r.memo_id = m.id
     WHERE r.notified = 0 AND r.remind_at <= ? AND m.is_active = 1

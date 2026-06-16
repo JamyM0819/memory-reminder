@@ -34,9 +34,9 @@ webpush.setVapidDetails(
   vapidKeys.privateKey
 );
 
-function sendNotification(subscription, memoContent) {
+function sendNotification(subscription, memoTitle, memoContent) {
   const payload = JSON.stringify({
-    title: '🔔 到时间复习了',
+    title: memoTitle ? `🔔 ${memoTitle}` : '🔔 到时间复习了',
     body: memoContent,
     icon: '/icon-192.svg',
     badge: '/icon-96.svg',
