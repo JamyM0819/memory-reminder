@@ -2,18 +2,27 @@ const webpush = require('web-push');
 const fs = require('fs');
 const path = require('path');
 
-const VAPID_KEYS_PATH = path.join(__dirname, 'data', 'vapid.json');
-
+// Support environment variables for cloud deployment
 function loadOrGenerateKeys() {
-  const dir = path.dirname(VAPID_KEYS_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  // Cloud: use env vars if set
+  if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    return {
+      publicKey: process.env.VAPID_PUBLIC_KEY,
+      privateKey: process.env.VAPID_PRIVATE_KEY
+    };
+  }
 
-  if (fs.existsSync(VAPID_KEYS_PATH)) {
-    return JSON.parse(fs.readFileSync(VAPID_KEYS_PATH, 'utf8'));
+  // Local dev: store in data/vapid.json
+  const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
+  const vapidPath = path.join(dataDir, 'vapid.json');
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+  if (fs.existsSync(vapidPath)) {
+    return JSON.parse(fs.readFileSync(vapidPath, 'utf8'));
   }
 
   const keys = webpush.generateVAPIDKeys();
-  fs.writeFileSync(VAPID_KEYS_PATH, JSON.stringify(keys, null, 2));
+  fs.writeFileSync(vapidPath, JSON.stringify(keys, null, 2));
   return keys;
 }
 

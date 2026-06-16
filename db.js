@@ -1,7 +1,10 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'data', 'memory.db');
+const DB_PATH = () => {
+  const dir = process.env.DATA_DIR || path.join(__dirname, 'data');
+  return path.join(dir, 'memory.db');
+};
 
 // China timezone helper (UTC+8)
 function toLocalISO(date) {
@@ -27,9 +30,10 @@ const INTERVALS = [
 
 function getDb() {
   const fs = require('fs');
-  const dir = path.dirname(DB_PATH);
+  const dbPath = DB_PATH();
+  const dir = path.dirname(dbPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  const db = new Database(DB_PATH);
+  const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   return db;
 }
