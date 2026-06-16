@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>记忆内容</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+  <style>
+    .ql-container { font-size: 16px; min-height: 200px; }
+    .ql-editor { min-height: 200px; }
+    .ql-toolbar { border-radius: 8px 8px 0 0; }
+    .ql-container { border-radius: 0 0 8px 8px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 id="page-title">添加记忆</h1>
+    <a href="/" style="font-size:14px;font-weight:normal;">取消</a>
+  </div>
+
+  <div class="form-page">
+    <div id="editor"></div>
+    <div class="form-actions" style="margin-top:12px;">
+      <button class="btn btn-secondary" onclick="history.back()">取消</button>
+      <button class="btn btn-primary" id="save-btn" onclick="handleSave()">保存</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  <script src="/app.js"></script>
+  <script>
+    const quill = new Quill('#editor', {
+      theme: 'snow',
+      placeholder: '写下一段需要记忆的内容…',
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ header: [1, 2, 3, false] }],
+          ['blockquote', 'code-block'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['clean']
+        ]
+      }
+    });
+
+    const editId = new URLSearchParams(location.search).get('id');
+
+    async function init() {
+      if (editId) {
+        document.getElementById('page-title').textContent = '编辑记忆';
+        document.getElementById('save-btn').textContent = '更新';
+        try {
+          const memos = await API.getMemos();
+          const memo = memos.find(m => m.id == editId);
+          if (memo) {
+            quill.root.innerHTML = memo.content;
+          }
+        } catch (err) {
+          showToast('加载失败');
+        }
+      }
+    }
+
+    async function handleSave() {
+      const content = quill.root.innerHTML;
+      const text = quill.getText().trim();
+      if (!text) {
+        showToast('请输入记忆内容');
+        return;
+      }
+      try {
+        if (editId) {
+          await API.updateMemo(editId, content);
+        } else {
+          await API.createMemo(content);
+        }
+        location.href = '/';
+      } catch (err) {
+        showToast('保存失败，请重试');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

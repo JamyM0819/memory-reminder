@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4a90d9">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.svg">
+  <title>记忆提醒</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="header">
+    <h1>🧠 记忆提醒</h1>
+    <a href="/settings.html">⚙️</a>
+  </div>
+
+  <div class="memo-list" id="memo-list">
+    <div class="spinner">加载中...</div>
+  </div>
+
+  <button class="fab" onclick="location.href='/add.html'" aria-label="添加记忆">+</button>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/app.js"></script>
+  <script>
+    renderMemoList();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(() => {
+        subscribePush();
+      });
+    }
+  </script>
+</body>
+</html>

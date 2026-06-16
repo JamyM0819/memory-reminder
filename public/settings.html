@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>设置</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="header">
+    <h1>设置</h1>
+    <a href="/" style="font-size:14px;font-weight:normal;">完成</a>
+  </div>
+
+  <div class="settings-page" id="settings-page">
+    <div class="settings-group">
+      <h3>工作日免打扰（周一~周五）</h3>
+      <div class="setting-row">
+        <label>开始时间</label>
+        <input type="time" id="dnd_weekday_start" value="23:00">
+      </div>
+      <div class="setting-row">
+        <label>结束时间</label>
+        <input type="time" id="dnd_weekday_end" value="07:00">
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h3>休息日免打扰（周六~周日）</h3>
+      <div class="setting-row">
+        <label>开始时间</label>
+        <input type="time" id="dnd_weekend_start" value="23:00">
+      </div>
+      <div class="setting-row">
+        <label>结束时间</label>
+        <input type="time" id="dnd_weekend_end" value="09:00">
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="handleSaveSettings()" style="margin-top:8px;">保存设置</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/app.js"></script>
+  <script>
+    async function loadSettings() {
+      try {
+        const s = await API.getSettings();
+        if (s.dnd_weekday_start) document.getElementById('dnd_weekday_start').value = s.dnd_weekday_start;
+        if (s.dnd_weekday_end) document.getElementById('dnd_weekday_end').value = s.dnd_weekday_end;
+        if (s.dnd_weekend_start) document.getElementById('dnd_weekend_start').value = s.dnd_weekend_start;
+        if (s.dnd_weekend_end) document.getElementById('dnd_weekend_end').value = s.dnd_weekend_end;
+      } catch (err) {
+        showToast('加载设置失败');
+      }
+    }
+
+    async function handleSaveSettings() {
+      const settings = {
+        dnd_weekday_start: document.getElementById('dnd_weekday_start').value,
+        dnd_weekday_end: document.getElementById('dnd_weekday_end').value,
+        dnd_weekend_start: document.getElementById('dnd_weekend_start').value,
+        dnd_weekend_end: document.getElementById('dnd_weekend_end').value
+      };
+      try {
+        await API.saveSettings(settings);
+        showToast('设置已保存');
+      } catch (err) {
+        showToast('保存失败');
+      }
+    }
+
+    loadSettings();
+  </script>
+</body>
+</html>
