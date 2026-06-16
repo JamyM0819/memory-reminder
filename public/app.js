@@ -1,11 +1,37 @@
+// --- Auth ---
+function getToken() { return localStorage.getItem('auth_token'); }
+
+async function authFetch(url, options = {}) {
+  const token = getToken();
+  if (token) {
+    options.headers = { ...options.headers, 'x-auth-token': token };
+  }
+  const res = await fetch(url, options);
+  if (res.status === 401) {
+    localStorage.removeItem('auth_token');
+    location.href = '/login.html';
+    throw new Error('Unauthorized');
+  }
+  return res;
+}
+
+function checkAuth() {
+  const token = getToken();
+  if (!token) {
+    location.href = '/login.html';
+    return false;
+  }
+  return true;
+}
+
 // --- API ---
 const API = {
   async getMemos() {
-    const res = await fetch('/api/memos');
+    const res = await authFetch('/api/memos');
     return res.json();
   },
   async createMemo(content) {
-    const res = await fetch('/api/memos', {
+    const res = await authFetch('/api/memos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content })
@@ -14,25 +40,25 @@ const API = {
     return res.json();
   },
   async deleteMemo(id) {
-    await fetch(`/api/memos/${id}`, { method: 'DELETE' });
+    await authFetch(`/api/memos/${id}`, { method: 'DELETE' });
   },
   async toggleMemo(id) {
-    const res = await fetch(`/api/memos/${id}/toggle`, { method: 'PUT' });
+    const res = await authFetch(`/api/memos/${id}/toggle`, { method: 'PUT' });
     return res.json();
   },
   async getSettings() {
-    const res = await fetch('/api/settings');
+    const res = await authFetch('/api/settings');
     return res.json();
   },
   async saveSettings(settings) {
-    await fetch('/api/settings', {
+    await authFetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(settings)
     });
   },
   async subscribe(subscription) {
-    await fetch('/api/subscribe', {
+    await authFetch('/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(subscription)

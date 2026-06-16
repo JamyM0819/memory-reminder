@@ -210,6 +210,14 @@ function getAllSettings() {
   return settings;
 }
 
+function getSetting(key) {
+  const db = getDb();
+  initSchema(db);
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+  db.close();
+  return row ? JSON.parse(row.value) : null;
+}
+
 function setSetting(key, value) {
   const db = getDb();
   initSchema(db);
@@ -231,6 +239,7 @@ module.exports = {
   getDueReminders,
   markNotified,
   getAllSettings,
+  getSetting,
   setSetting,
   INTERVALS
 };

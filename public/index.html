@@ -25,6 +25,7 @@
 
   <script src="/app.js"></script>
   <script>
+    if (!checkAuth()) { /* will redirect */ }
     renderMemoList();
 
     if ('serviceWorker' in navigator) {

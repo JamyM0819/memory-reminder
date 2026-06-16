@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4a90d9">
+  <title>记忆提醒 - 登录</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .login-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      padding: 24px;
+    }
+    .login-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 32px 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      width: 100%;
+      max-width: 320px;
+      text-align: center;
+    }
+    .login-box h2 { margin-bottom: 8px; font-size: 20px; }
+    .login-box p { color: #999; font-size: 14px; margin-bottom: 20px; }
+    .login-box input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .login-box input:focus { border-color: #4a90d9; }
+    .login-box .btn { margin-top: 12px; }
+    .error-msg { color: #e74c3c; font-size: 13px; margin-top: 8px; display: none; }
+    .setup-hint { font-size: 13px; color: #999; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-box">
+      <h2>🧠 记忆提醒</h2>
+      <p>请输入密码</p>
+      <input type="password" id="password" placeholder="输入密码" autofocus>
+      <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">进入</button>
+      <div class="error-msg" id="error-msg"></div>
+      <div class="setup-hint" id="setup-hint" style="display:none;">
+        <p>首次使用，请设置一个密码</p>
+        <button class="btn btn-primary" onclick="showSetup()" style="margin-top:8px;">设置密码</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/app.js"></script>
+  <script>
+    let isSetup = false;
+
+    async function init() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (!data.hasPassword) {
+          document.getElementById('setup-hint').style.display = 'block';
+          document.getElementById('login-btn').textContent = '设置密码';
+          isSetup = true;
+        }
+      } catch (err) {
+        showToast('无法连接服务器');
+      }
+    }
+
+    async function handleLogin() {
+      const pwd = document.getElementById('password').value;
+      if (!pwd) { showToast('请输入密码'); return; }
+
+      const btn = document.getElementById('login-btn');
+      btn.disabled = true;
+      btn.textContent = '请稍候...';
+
+      try {
+        let res;
+        if (isSetup) {
+          res = await fetch('/api/auth/setup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pwd })
+          });
+        } else {
+          res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pwd })
+          });
+        }
+
+        if (!res.ok) {
+          const err = await res.json();
+          document.getElementById('error-msg').textContent = err.error || '操作失败';
+          document.getElementById('error-msg').style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = isSetup ? '设置密码' : '进入';
+          return;
+        }
+
+        const data = await res.json();
+        localStorage.setItem('auth_token', data.token);
+        location.href = '/';
+      } catch (err) {
+        showToast('网络错误');
+        btn.disabled = false;
+        btn.textContent = isSetup ? '设置密码' : '进入';
+      }
+    }
+
+    function showSetup() {
+      isSetup = true;
+      document.getElementById('login-btn').textContent = '设置密码';
+      document.querySelector('.login-box p').textContent = '首次使用，请输入你要设置的密码';
+      document.getElementById('setup-hint').style.display = 'none';
+      document.getElementById('password').placeholder = '设置密码（至少4位）';
+      document.getElementById('password').value = '';
+      document.getElementById('error-msg').style.display = 'none';
+    }
+
+    document.getElementById('password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+
+    init();
+  </script>
+</body>
+</html>

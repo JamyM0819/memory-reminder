@@ -12,6 +12,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 const db = require('./db');
 const push = require('./push');
 const scheduler = require('./scheduler');
+const auth = require('./auth');
+
+// Auth middleware (protects all /api/* except /api/auth)
+const requireAuth = auth.setupAuth(app, db);
+app.use('/api', requireAuth);
 
 // --- Memo routes ---
 
